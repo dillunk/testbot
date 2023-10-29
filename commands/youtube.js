@@ -6,69 +6,123 @@ const { MessageMedia } = pkg;
 
 import ytmp3 from "yt-converter";
 
-export function YouTube(msg) {
-  const prompt = msg.body.split(" ").slice(1).join(" ");
-
-  const ytUrl = new URL("https://www.googleapis.com/youtube/v3/search");
-
-  const part = "snippet";
-  const maxResult = 10;
-  const q = prompt;
-  const type = "video";
-  const key = process.env.YT_API_KEY;
-
-  ytUrl.searchParams.append("part", part);
-  ytUrl.searchParams.append("maxResults", maxResult);
-  ytUrl.searchParams.append("q", q);
-  ytUrl.searchParams.append("type", type);
-  ytUrl.searchParams.append("key", key);
-
-  fetch(ytUrl.toString())
-    .then((resp) => resp.json())
-    .then((datas) => {
-      let replyMessage = "";
-
-      for (const data of datas.items) {
-        const title = data.snippet.title;
-        const videoId = data.id.videoId;
-
-        const videoUrl = new URL("https://www.youtube.com/watch");
-        videoUrl.searchParams.append("v", videoId);
-
-        const videoUrlString = videoUrl.toString();
-
-        const text = `=> Judul: ${title}, URL: ${videoUrlString}\n`;
-        replyMessage += text;
-      }
-
-      msg.reply(replyMessage);
-    });
-}
-
-export async function YtMp3(msg) {
+export async function YouTube(msg) {
   try {
     const prompt = msg.body.split(" ").slice(1).join(" ");
 
-    async function onfinished() {
-      ytmp3.getInfo(prompt).then((info) => {
-        try {
-          const audioPath = `./tempAudio/${info.title}.mp3`;
+    const ytBaseUrl = "https://www.googleapis.com/youtube/v3/search";
+    const ytURL = new URL(ytBaseUrl);
 
-          console.log(audioPath);
+    const part = "snippet";
+    const maxResult = 10;
+    const q = prompt;
+    const type = "video";
 
-          const messageMedia = MessageMedia.fromFilePath(audioPath);
+    const key = process.env.YT_API_KEY;
 
-          console.log(messageMedia);
-          msg.reply(messageMedia);
-        } catch (err) {
-          console.log(err);
-        }
-      });
+    ytURL.searchParams.append("part", part);
+    ytURL.searchParams.append("maxResults", maxResult);
+    ytURL.searchParams.append("q", q);
+    ytURL.searchParams.append("type", type);
+    ytURL.searchParams.append("key", key);
+
+    const stringUrl = ytURL.toString();
+    const youtubeResponse = await fetch(stringUrl);
+    const jsonYtResponses = await youtubeResponse.json();
+
+    let replyMessage = "";
+    let i = 1;
+
+    for (const data of jsonYtResponses.items) {
+      const title = data.snippet.title;
+      const videoId = data.id.videoId;
+
+      const baseWatchVideoUrl = "https://www.youtube.com/watch";
+
+      const videoUrl = new URL(baseWatchVideoUrl);
+      videoUrl.searchParams.append("v", videoId);
+
+      const videoUrlString = videoUrl.toString();
+
+      const text = `${i} Judul: ${title}, URL: ${videoUrlString}\n`;
+      replyMessage += text;
+
+      i++;
     }
 
-    ytmp3.convertAudio(
+    msg.reply(replyMessage);
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+// export async function YtMp3(msg) {
+//   try {
+//     const prompt = msg.body.split(" ").slice(1).join(" ");
+
+//     async function onfinished() {
+//       ytmp3.getInfo(prompt).then((info) => {
+//         try {
+//           const audioPath = `./tempAudio/${info.title}.mp3`;
+//           const messageMedia = MessageMedia.fromFilePath(audioPath);
+
+//           msg.reply(messageMedia);
+//         } catch (err) {
+//           console.log(err);
+//         }
+//       });
+//     }
+
+//     ytmp3.convertAudio(
+//       {
+//         url: prompt,
+//         directoryDownload: "./tempAudio/",
+//         itag: 140,
+//         title: `yoww`,
+//       },
+//       undefined,
+//       onfinished
+//     );
+//   } catch (err) {
+//     console.log(err);
+//   }
+// }
+export async function YtMp3(msg) {
+  try {
+    const quotedMessage = await msg.getQuotedMessage();
+
+    const promptNumber = parseInt(msg.body.split(" ").slice(1).join(" "));
+
+    console.log(quotedMessage);
+    const selectedMessage = await quotedMessage.body.split("\n")[
+      promptNumber ? promptNumber + 1 : 1
+    ];
+
+    console.log(selectedMessage);
+    const videoId = selectedMessage
+      .split("https://www.youtube.com/watch?v=")
+      .pop();
+
+    const baseWatchVideoUrl = "https://www.youtube.com/watch";
+
+    const videoUrl = new URL(baseWatchVideoUrl);
+    videoUrl.searchParams.append("v", videoId);
+
+    async function onfinished() {
+      try {
+        const info = await ytmp3.getInfo(videoUrl);
+        const audioPath = `./tempAudio/${info.title}.mp3`;
+        const messageMedia = MessageMedia.fromFilePath(audioPath);
+
+        msg.reply(messageMedia);
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    await ytmp3.convertAudio(
       {
-        url: prompt,
+        url: videoUrl,
         directoryDownload: "./tempAudio/",
         itag: 140,
         title: `yoww`,
