@@ -1,0 +1,8 @@
+.wwebjs_auth
+.wwebjs_cache
+.env
+
+/node_modules
+/tempAudio
+
+__test__.js

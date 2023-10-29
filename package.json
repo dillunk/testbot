@@ -1,0 +1,20 @@
+{
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "openai": "^4.14.1",
+    "whatsapp-web.js": "^1.23.0",
+    "youtube-dl-exec": "^2.4.16",
+    "yt-converter": "^1.3.4"
+  },
+  "type": "module",
+  "name": "testwabot",
+  "version": "1.0.0",
+  "main": "index.mjs",
+  "scripts": {
+    "dev": "nodemon index.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
